@@ -150,6 +150,15 @@ defmodule VCUtils.HTTPClient do
        "Error decoding response: \n#{inspect(body, pretty: true)}\n\n#{inspect(e, pretty: true)}"}
   end
 
+  def process_response({:ok, %{status_code: status, body: body}}, opts) when status in 200..299 do
+    serializer = Keyword.get(opts, :serializer, Jason)
+    body |> serializer.decode!(opts) |> then(&{:ok, %{status: status, body: &1}})
+  rescue
+    e ->
+      {:error,
+       "Error decoding response: \n#{inspect(body, pretty: true)}\n\n#{inspect(e, pretty: true)}"}
+  end
+
   def process_response({:ok, response}, opts) do
     status = Map.get(response, :status) || Map.get(response, :status_code)
     serializer = Keyword.get(opts, :serializer, Jason)
